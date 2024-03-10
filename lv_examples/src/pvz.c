@@ -1,7 +1,13 @@
 #include "lvgl/lvgl.h" 
+#include "math.h"
+
 #define max_quantity 15
 #define zb_maxlive 15
 
+#define hor_ratio   2.6667f
+#define ver_ratio   2.5f
+
+static const lv_font_t * font_large;
 static int chanzi_btn_select;
 static int sunflower_btn_select;
 static int wandouflower_btn_select;
@@ -201,6 +207,8 @@ void pvz_start()
     wandouflower_btn_select = 0;
     wogua_btn_select = 0;
 
+    font_large = &lv_font_montserrat_32;
+
     screen1 = lv_tileview_create(lv_scr_act());
     lv_obj_set_style_bg_color(screen1, lv_color_hex(0x000000), LV_PART_MAIN);
     lv_obj_clear_flag(screen1, LV_OBJ_FLAG_SCROLLABLE);
@@ -212,8 +220,9 @@ void pvz_start()
 
     score_lable = lv_label_create(screen1);
     lv_label_set_text_fmt(score_lable, "%d", sun_score);
+    lv_obj_set_style_text_font(score_lable, font_large, 0);
     lv_obj_set_style_text_color(score_lable, lv_color_hex(0xffffff), LV_PART_MAIN);
-    lv_obj_set_pos(score_lable, 10, 30);
+    lv_obj_set_pos(score_lable, 12 * hor_ratio, 30 * ver_ratio);
 
     botton_exit = lv_btn_create(screen1);
     lv_obj_set_style_bg_color(botton_exit, lv_color_hex(0x6f3011), LV_PART_MAIN);
@@ -224,8 +233,8 @@ void pvz_start()
     lv_obj_add_event_cb(botton_exit, exit_game_cb, LV_EVENT_RELEASED, 0);
 
     sunflower_btn = lv_btn_create(screen1);
-    lv_obj_set_pos(sunflower_btn, 52, -2);
-    lv_obj_set_size(sunflower_btn, 33, 45);
+    lv_obj_set_pos(sunflower_btn, 52 * hor_ratio , -2);
+    lv_obj_set_size(sunflower_btn, 95, 105);
     lv_obj_set_style_bg_color(sunflower_btn, lv_color_hex(0x000000), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(sunflower_btn, 160, LV_PART_MAIN);
     lv_obj_set_style_border_width(sunflower_btn, 2, LV_PART_MAIN);
@@ -235,8 +244,8 @@ void pvz_start()
     lv_obj_clear_flag(sunflower_btn, LV_OBJ_FLAG_CLICKABLE);
 
     wandouflower_btn = lv_btn_create(screen1);
-    lv_obj_set_pos(wandouflower_btn, 87, -2);
-    lv_obj_set_size(wandouflower_btn, 33, 45);
+    lv_obj_set_pos(wandouflower_btn, 87 * hor_ratio, -2);
+    lv_obj_set_size(wandouflower_btn, 95, 105);
     lv_obj_set_style_bg_color(wandouflower_btn, lv_color_hex(0x000000), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(wandouflower_btn, 160, LV_PART_MAIN);
     lv_obj_set_style_border_width(wandouflower_btn, 2, LV_PART_MAIN);
@@ -246,8 +255,8 @@ void pvz_start()
     lv_obj_clear_flag(wandouflower_btn, LV_OBJ_FLAG_CLICKABLE);
 
     wogua_btn = lv_btn_create(screen1);
-    lv_obj_set_pos(wogua_btn, 122, -2);
-    lv_obj_set_size(wogua_btn, 33, 45);
+    lv_obj_set_pos(wogua_btn, 122 * hor_ratio, -2);
+    lv_obj_set_size(wogua_btn, 95, 105);
     lv_obj_set_style_bg_color(wogua_btn, lv_color_hex(0x000000), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(wogua_btn, 160, LV_PART_MAIN);
     lv_obj_set_style_border_width(wogua_btn, 2, LV_PART_MAIN);
@@ -257,8 +266,8 @@ void pvz_start()
     lv_obj_clear_flag(wogua_btn, LV_OBJ_FLAG_CLICKABLE);
 
     chanzi_btn = lv_btn_create(screen1);
-    lv_obj_set_pos(chanzi_btn, 350, -1);
-    lv_obj_set_size(chanzi_btn, 43, 43);
+    lv_obj_set_pos(chanzi_btn, 350 * hor_ratio, -1);
+    lv_obj_set_size(chanzi_btn, 116, 92);
     lv_obj_set_style_shadow_opa(chanzi_btn, 0, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(chanzi_btn, 0, LV_PART_MAIN);
     lv_obj_set_style_border_width(chanzi_btn, 2, LV_PART_MAIN);
@@ -339,6 +348,7 @@ void timer_led_cb(lv_timer_t *t)
 {
 }
 
+// 僵尸生成
 void timer_cb1(lv_timer_t *t)
 {
     int i, j;
@@ -352,9 +362,14 @@ void timer_cb1(lv_timer_t *t)
             zb_matrix[j].zb = lv_img_create(map1);
             lv_img_set_src(zb_matrix[j].zb, &zb1);
             zb_matrix[j].y = rand() % 5;
-            zb_matrix[j].x = 480;
-            lv_obj_set_pos(zb_matrix[j].zb, 480, zb_matrix[j].y * 54 + 35);
-            lv_img_set_pivot(zb_matrix[j].zb, 15, 59);
+            zb_matrix[j].x = 1280;
+            LV_LOG_WARN("zb(%d, %d)->pos:(%d, %d)",
+                zb_matrix[j].x, zb_matrix[j].y,
+                zb_matrix[j].x, (int)(zb_matrix[j].y * 54 * hor_ratio) + 85);
+            lv_obj_set_pos(zb_matrix[j].zb,
+                zb_matrix[j].x,
+                zb_matrix[j].y * 54 * hor_ratio + 85);
+            lv_img_set_pivot(zb_matrix[j].zb, 15 * hor_ratio, 59 * ver_ratio);
 
             lv_anim_t a;
             lv_anim_init(&a);
@@ -372,6 +387,7 @@ void timer_cb1(lv_timer_t *t)
     }
 }
 
+// 僵尸移动
 void timer_cb2(lv_timer_t *t)
 {
     int x, i, j;
@@ -380,12 +396,13 @@ void timer_cb2(lv_timer_t *t)
     {
         if (zb_matrix[j].live > 0)
         {
-            zb_matrix[j].x--;
+            zb_matrix[j].x -= (int)roundf(hor_ratio);
             lv_obj_set_x(zb_matrix[j].zb, zb_matrix[j].x);
         }
     }
 }
 
+// 随机新阳光
 void timer_cb3(lv_timer_t *t)
 {
     int i, j;
@@ -398,8 +415,8 @@ void timer_cb3(lv_timer_t *t)
             shine[j].shine = lv_img_create(map1);
             lv_img_set_src(shine[j].shine, &sunshine);
             lv_obj_add_flag(shine[j].shine, LV_OBJ_FLAG_CLICKABLE);
-            shine[j].x = rand() % 400 + 30;
-            shine[j].y = rand() % 220 + 50;
+            shine[j].x = rand() % (int)(400 * hor_ratio) + 30; // +30
+            shine[j].y = rand() % (int)(220 * ver_ratio) + 95; // +50
             lv_obj_set_pos(shine[j].shine, shine[j].x, shine[j].y);
             lv_obj_add_event_cb(shine[j].shine, shine_del_cb1, LV_EVENT_RELEASED, &shine[j]);
 
@@ -409,7 +426,7 @@ void timer_cb3(lv_timer_t *t)
             lv_anim_set_exec_cb(&a1, shine_start_cb1);
             lv_anim_set_path_cb(&a1, lv_anim_path_ease_out);
             lv_anim_set_time(&a1, 1000);
-            lv_anim_set_values(&a1, shine[j].y, shine[j].y + 20);
+            lv_anim_set_values(&a1, shine[j].y, shine[j].y + 20 * ver_ratio);
             lv_anim_set_user_data(&a1, &shine[j]);
             lv_anim_start(&a1);
 
@@ -436,11 +453,11 @@ void add_zidan_cb(lv_timer_t *t)
         if (zidan[i].alive == 0)
         {
             zidan[i].alive = 1;
-            zidan[i].x = x * 49 + 70;
+            zidan[i].x = x * 130 + 70;
             zidan[i].y = y;
 
             zidan[i].zidan = lv_btn_create(map1);
-            lv_obj_set_pos(zidan[i].zidan, zidan[i].x, y * 54 + 46);
+            lv_obj_set_pos(zidan[i].zidan, zidan[i].x, y * 134  + 128);
             lv_obj_set_size(zidan[i].zidan, 16, 16);
             lv_obj_set_style_bg_color(zidan[i].zidan, lv_color_hex(0x40ff40), LV_PART_MAIN);
             lv_obj_set_style_shadow_color(zidan[i].zidan, lv_color_hex(0x004000), LV_PART_MAIN);
@@ -454,6 +471,7 @@ void add_zidan_cb(lv_timer_t *t)
     }
 }
 
+// 子弹移动
 void zidan_move()
 {
     int i, j;
@@ -463,7 +481,7 @@ void zidan_move()
         if (zidan[i].alive == 1)
         {
             zidan[i].x += 5;
-            if (zidan[i].x > 490)
+            if (zidan[i].x > 1300)
             {
                 zidan[i].alive = 0;
                 lv_obj_del(zidan[i].zidan);
@@ -743,8 +761,10 @@ void map_click_cb(lv_event_t *e)
     lv_point_t click_point;
     lv_indev_get_point(indev_touchpad, &click_point);
 
-    x = click_point.x / 54;
-    y = (click_point.y - 55) / 54;
+    x = click_point.x / 133;
+    y = (click_point.y - 115) / 137;
+
+    LV_LOG_WARN("map_click_cb(%d, %d)", x, y);
 
     if (sunflower_btn_select && (sun_score > 49))
     {
@@ -758,7 +778,7 @@ void map_click_cb(lv_event_t *e)
                 sunflower[j].sunflower = lv_img_create(map1);
                 lv_img_set_src(sunflower[j].sunflower, &sun_img);
                 lv_obj_clear_flag(sunflower[j].sunflower, LV_OBJ_FLAG_CLICKABLE);
-                lv_obj_set_pos(sunflower[j].sunflower, x * 49 + 20, y * 54 + 44);
+                lv_obj_set_pos(sunflower[j].sunflower, x * 130 + 65, y * 134 + 128);
                 sun_score -= 50;
                 lv_label_set_text_fmt(score_lable, "%d", sun_score);
                 lv_obj_clear_flag(map1, LV_OBJ_FLAG_CLICKABLE);
@@ -782,7 +802,10 @@ void map_click_cb(lv_event_t *e)
                 wandouflower[j].wandouflower = lv_img_create(map1);
                 lv_img_set_src(wandouflower[j].wandouflower, &wandou_img);
                 lv_obj_clear_flag(wandouflower[j].wandouflower, LV_OBJ_FLAG_CLICKABLE);
-                lv_obj_set_pos(wandouflower[j].wandouflower, x * 49 + 18, y * 54 + 44);
+                LV_LOG_WARN("wandouflower(%d, %d)->pos:(%d, %d)",
+                    wandouflower[j].x, wandouflower[j].y,
+                     x * 130 + 65, y * 134 + 128);
+                lv_obj_set_pos(wandouflower[j].wandouflower, x * 130 + 65, y * 134 + 128);
                 sun_score -= 100;
                 lv_label_set_text_fmt(score_lable, "%d", sun_score);
                 lv_obj_clear_flag(map1, LV_OBJ_FLAG_CLICKABLE);
@@ -808,7 +831,7 @@ void map_click_cb(lv_event_t *e)
                 wogua[j].wogua = lv_img_create(map1);
                 lv_img_set_src(wogua[j].wogua, &wogua_img);
                 lv_obj_clear_flag(wogua[j].wogua, LV_OBJ_FLAG_CLICKABLE);
-                lv_obj_set_pos(wogua[j].wogua, x * 49 + 18, y * 54 + 44);
+                lv_obj_set_pos(wogua[j].wogua, x * 130 + 65, y * 134 + 128);
                 sun_score -= 200;
                 lv_label_set_text_fmt(score_lable, "%d", sun_score);
                 lv_obj_clear_flag(map1, LV_OBJ_FLAG_CLICKABLE);
