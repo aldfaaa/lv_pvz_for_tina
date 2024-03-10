@@ -2,7 +2,7 @@
 #include "math.h"
 
 #define max_quantity 15
-#define zb_maxlive 15
+#define ZB_MAX_LIVE 15
 
 #define hor_ratio   2.6667f
 #define ver_ratio   2.5f
@@ -147,6 +147,7 @@ static void timer_cb1(lv_timer_t *t);
 static void timer_cb2(lv_timer_t *t);
 static void timer_cb3(lv_timer_t *t);
 static void shine_del_cb1(lv_event_t *e);
+static void shine_del_cb2(shine_type *s);
 static void anim_cb1(void *var, int32_t v);
 static void anim_cb2(void *var, int32_t v);
 static void cube_ready();
@@ -352,13 +353,14 @@ void timer_led_cb(lv_timer_t *t)
 void timer_cb1(lv_timer_t *t)
 {
     int i, j;
-
+    static int zb_max_live = ZB_MAX_LIVE;
+    zb_max_live++;
     for (j = 0; j < max_quantity; j++)
     {
         if (zb_matrix[j].alive == 0)
         {
             zb_matrix[j].alive = 1;
-            zb_matrix[j].live = zb_maxlive;
+            zb_matrix[j].live = rand() % zb_max_live;
             zb_matrix[j].zb = lv_img_create(map1);
             lv_img_set_src(zb_matrix[j].zb, &zb1);
             zb_matrix[j].y = rand() % 5;
@@ -415,11 +417,11 @@ void timer_cb3(lv_timer_t *t)
             shine[j].shine = lv_img_create(map1);
             lv_img_set_src(shine[j].shine, &sunshine);
             lv_obj_add_flag(shine[j].shine, LV_OBJ_FLAG_CLICKABLE);
-            shine[j].x = rand() % (int)(400 * hor_ratio) + 30; // +30
-            shine[j].y = rand() % (int)(220 * ver_ratio) + 95; // +50
+            shine[j].x = rand() % (int)(1200) + 48; // +30
+            shine[j].y = rand() % (int)(600) + 115; // +50
             lv_obj_set_pos(shine[j].shine, shine[j].x, shine[j].y);
             lv_obj_add_event_cb(shine[j].shine, shine_del_cb1, LV_EVENT_RELEASED, &shine[j]);
-
+            
             lv_anim_t a1;
             lv_anim_init(&a1);
             lv_anim_set_var(&a1, shine[j].shine);
@@ -433,6 +435,9 @@ void timer_cb3(lv_timer_t *t)
             return;
         }
     }
+    int idx = rand() % max_quantity;
+    shine_del_cb2(&shine[idx]);
+    //lv_obj_add_event_cb(shine[idx].shine, shine_del_cb1, LV_EVENT_RELEASED, &shine[idx]);   
 }
 
 void shine_start_cb1(void *var, int32_t v)
@@ -453,11 +458,11 @@ void add_zidan_cb(lv_timer_t *t)
         if (zidan[i].alive == 0)
         {
             zidan[i].alive = 1;
-            zidan[i].x = x * 130 + 70;
+            zidan[i].x = x * 130 + 170;
             zidan[i].y = y;
 
             zidan[i].zidan = lv_btn_create(map1);
-            lv_obj_set_pos(zidan[i].zidan, zidan[i].x, y * 134  + 128);
+            lv_obj_set_pos(zidan[i].zidan, zidan[i].x, y * 134  + 135);
             lv_obj_set_size(zidan[i].zidan, 16, 16);
             lv_obj_set_style_bg_color(zidan[i].zidan, lv_color_hex(0x40ff40), LV_PART_MAIN);
             lv_obj_set_style_shadow_color(zidan[i].zidan, lv_color_hex(0x004000), LV_PART_MAIN);
@@ -480,7 +485,7 @@ void zidan_move()
     {
         if (zidan[i].alive == 1)
         {
-            zidan[i].x += 5;
+            zidan[i].x += 20;
             if (zidan[i].x > 1300)
             {
                 zidan[i].alive = 0;
@@ -502,7 +507,8 @@ void zidan_move()
             {
                 if ((zidan[j].alive > 0 && zb_matrix[i].y == zidan[j].y) && (zb_matrix[i].x - zidan[j].x < 6))
                 {
-                    zb_matrix[i].live--;
+                    // 僵尸默认有15血,这里是血量扣减
+                    zb_matrix[i].live-=3;
                     zidan[j].alive = 0;
                     lv_img_set_angle(zb_matrix[i].zb, 100);
 
@@ -532,7 +538,7 @@ void zidan_move()
                     lv_anim_start(&a1);
                 }
 
-                if (zb_matrix[i].live == 0)
+                if (zb_matrix[i].live <= 0)
                 {
 
                     lv_anim_del(zb_matrix[i].zb, zb_move_cb);
@@ -620,8 +626,35 @@ void zidan_move()
 
 void shine_del_cb1(lv_event_t *e)
 {
-
     shine_type *user = (shine_type *)lv_event_get_user_data(e);
+
+    lv_obj_clear_flag(user->shine, LV_OBJ_FLAG_CLICKABLE);
+
+    lv_anim_t a1;
+    lv_anim_init(&a1);
+    lv_anim_set_var(&a1, user->shine);
+    lv_anim_set_exec_cb(&a1, anim_cb1);
+    lv_anim_set_path_cb(&a1, lv_anim_path_ease_out);
+    lv_anim_set_time(&a1, 500);
+    lv_anim_set_values(&a1, user->x, 10);
+    lv_anim_start(&a1);
+
+    lv_anim_t a2;
+    lv_anim_init(&a2);
+    lv_anim_set_var(&a2, user->shine);
+    lv_anim_set_exec_cb(&a2, anim_cb2);
+    lv_anim_set_path_cb(&a2, lv_anim_path_ease_out);
+    lv_anim_set_time(&a2, 500);
+    lv_anim_set_delay(&a2, 10);
+    lv_anim_set_values(&a2, user->y, 0);
+    lv_anim_set_user_data(&a2, user);
+    lv_anim_set_deleted_cb(&a2, shine_delect_cb);
+    lv_anim_start(&a2);
+}
+
+static void shine_del_cb2(shine_type *s)
+{
+    shine_type *user = (shine_type *)s;
 
     lv_obj_clear_flag(user->shine, LV_OBJ_FLAG_CLICKABLE);
 
@@ -761,8 +794,13 @@ void map_click_cb(lv_event_t *e)
     lv_point_t click_point;
     lv_indev_get_point(indev_touchpad, &click_point);
 
-    x = click_point.x / 133;
+    x = (click_point.x - 48) < 0 ? 0 : click_point.x / 133;
     y = (click_point.y - 115) / 137;
+
+    if (x > 8) x = 8;
+    if (x < 0) x = 0;
+    if (y > 4) y = 4;
+    if (y < 0) y = 0;
 
     LV_LOG_WARN("map_click_cb(%d, %d)", x, y);
 
@@ -783,7 +821,7 @@ void map_click_cb(lv_event_t *e)
                 lv_label_set_text_fmt(score_lable, "%d", sun_score);
                 lv_obj_clear_flag(map1, LV_OBJ_FLAG_CLICKABLE);
                 sunflower_btn_select = 0;
-                sunflower[j].sunflowertimer = lv_timer_create(sun_creat_cb, 4000, &sunflower[j]);
+                sunflower[j].sunflowertimer = lv_timer_create(sun_creat_cb, 5000, &sunflower[j]);
                 lv_obj_set_style_border_opa(sunflower_btn, 0, LV_PART_MAIN);
                 break;
             }
@@ -812,7 +850,7 @@ void map_click_cb(lv_event_t *e)
                 wandouflower_btn_select = 0;
                 lv_obj_set_style_border_opa(wandouflower_btn, 0, LV_PART_MAIN);
 
-                wandouflower[j].zidantimer = lv_timer_create(add_zidan_cb, 2000, &wandouflower[j]);
+                wandouflower[j].zidantimer = lv_timer_create(add_zidan_cb, 1000, &wandouflower[j]);
                 break;
             }
         }
@@ -917,12 +955,21 @@ void sun_creat_cb(lv_timer_t *t)
     {
         if (shine[j].alive == 0)
         {
+            int tmp_x = x * 130 + 65;
+            int tmp_y = y * 134 + 128;
+            for (i = 0; i < max_quantity; i++) {
+                if (abs(tmp_x - shine[i].x) < 3 &&
+                    abs(tmp_y - shine[i].y) < 3)
+                    return;
+            }
+
             shine[j].alive = 1;
             shine[j].shine = lv_img_create(map1);
             lv_img_set_src(shine[j].shine, &sunshine);
             lv_obj_add_flag(shine[j].shine, LV_OBJ_FLAG_CLICKABLE);
-            shine[j].x = x * 49 + 20;
-            shine[j].y = y * 54 + 44;
+            shine[j].x = x * 130 + 65;
+            shine[j].y = y * 134 + 128;
+
             lv_obj_set_pos(shine[j].shine, shine[j].x, shine[j].y);
             lv_obj_add_event_cb(shine[j].shine, shine_del_cb1, LV_EVENT_RELEASED, &shine[j]);
 
